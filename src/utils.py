@@ -1,8 +1,10 @@
-import os
+import base64
 import google.generativeai as genai
-import logging
-import requests
+import io
 import json
+import logging
+import os
+import requests
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -20,19 +22,23 @@ def load_prompt():
                    """
     return input_prompt
 
-def prompt_with_llm(input_question, prompt, image):
+def prompt_with_llm(user_prompt, system_prompt, image):
     model = genai.GenerativeModel("gemini-1.5-pro-latest")
-    response = model.generate_content([input_question, prompt, image])
+    response = model.generate_content([user_prompt, system_prompt, image])
     return f"""
-            (best quality:1.5), (solo:1.4), (upper body:1.4), (looking at viewer:1.4),
+            (best quality:1.5),
             {response.text}
             <lora:last:0.9>
             """
+    # return f"""
+    #         (best quality:1.5), (solo:1.4), (upper body:1.4), (looking at viewer:1.4),
+    #         {response.text}
+    #         <lora:last:0.9>
+    #         """
             
 def generate_image(prompt):
     
     url = f"{os.getenv('SD_API_URL')}/sdapi/v1/txt2img"
-
     headers = {
         "Content-Type": "application/json",
     }
@@ -41,7 +47,7 @@ def generate_image(prompt):
     
     data = {
         "prompt": prompt,
-        "negative_prompt": "lowres, blurry, worst quality, low quality, normal quality, many people, bad anatomy, bad hands, missing fingers, error, text, username, extra digit, fewer digits, signature, watermark, cropped, jpeg artifacts",
+        "negative_prompt": "lowres, blurry, worst quality, low quality, normal quality, many people, bad anatomy, bad hands, missing fingers, error, text, username, extra digit, fewer digits, signature, watermark, cropped, jpeg artifacts, detailed background, glitch rim",
         "batch_size": 1,
         "n_iter": 1,
         "steps": 30,
@@ -55,12 +61,61 @@ def generate_image(prompt):
         "subseed_strength": 0,
         "sampler_index": "Euler a",
         "save_images": False,
-        "send_images": True
+        "send_images": True,
+        "denoising_strength": 0.75
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
     result = json.loads(response.text)
     logging.info(f"generate_image.code: {str(response.status_code)}", exc_info=True)
     # logging.info(f"generate_image.text: {str(response.text)}", exc_info=True)
+    
+    return result
+
+def generate_img2img(prompt, image):
+    
+    url = f"{os.getenv('SD_API_URL')}/sdapi/v1/img2img"
+
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    logging.info(f"generate_img2img.prompt: {prompt}", exc_info=True)
+    # logging.info(f"generate_img2img.img: {image}", exc_info=True)
+    
+    byte_stream = io.BytesIO()
+    image.save(byte_stream, format='PNG')
+    bytes_image = byte_stream.getvalue()
+    encoded_image = base64.b64encode(bytes_image).decode('utf-8')
+
+    logging.info(f"generate_img2img.blob_image: {encoded_image}", exc_info=True)
+    data = {
+        "prompt": prompt,
+        "negative_prompt": "lowres, blurry, worst quality, low quality, normal quality, many people, bad anatomy, bad hands, missing fingers, error, text, username, extra digit, fewer digits, signature, watermark, cropped, jpeg artifacts, detailed background, glitch rim",
+        "batch_size": 1,
+        "n_iter": 1,
+        "steps": 30,
+        "cfg_scale": 7,
+        "width": 512,
+        "height": 512,
+        "restore_faces": False,
+        "tiling": False,
+        "seed": -1,
+        "subseed": -1,
+        "subseed_strength": 0,
+        "sampler_index": "Euler a",
+        "save_images": False,
+        "send_images": True,
+        "denoising_strength": 0.75,
+        "include_init_images": True,
+        "init_images": [
+            encoded_image
+        ],
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    result = json.loads(response.text)
+    logging.info(f"generate_img2img.code: {str(response.status_code)}", exc_info=True)
+    # logging.info(f"generate_img2img.text: {str(response.text)}", exc_info=True)
     
     return result

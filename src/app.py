@@ -1,10 +1,10 @@
-import streamlit as st
-import io
 import base64
+import io
 import logging
+import streamlit as st
 
 from PIL import Image
-from utils import load_prompt, prompt_with_llm, generate_image
+from utils import load_prompt, prompt_with_llm, generate_image, generate_img2img
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +14,7 @@ def main():
 
     st.title("Cartoon Profile Generator ( ^▽^)σ")
 
-    user_question = st.text_input("Input prompt", key="input")
+    user_prompt = st.text_input("Input prompt", placeholder="Enter your specific appearance.", key="input")
     
     st.sidebar.title("Profile Image")
 
@@ -23,7 +23,7 @@ def main():
         type=["jpg", "png", "jpeg"]
     )
 
-    image = None
+    # image = st.image("/Users/Nitirat/Documents/PRANEAT/Pradit/Stable Diffusion/Datasets/nitirat-rectangle.png", caption="Uploaded image", use_column_width=True)
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
@@ -42,11 +42,12 @@ def main():
         with st.spinner("Profile generating..."):
             try:
                 prompt = load_prompt()
-                caption = prompt_with_llm(input_question=user_question, prompt=prompt, image=image)
+                caption = prompt_with_llm(user_prompt=user_prompt, system_prompt=prompt, image=image)
                 st.subheader("Caption:")
                 st.write(caption)
                 
-                result = generate_image(caption)
+                # result = generate_image(caption)
+                result = generate_img2img(caption, image)
                 image_bytes = base64.b64decode(result['images'][0])
                 final_image = Image.open(io.BytesIO(image_bytes))
                 st.image(final_image, caption="Result image", use_column_width=True)
