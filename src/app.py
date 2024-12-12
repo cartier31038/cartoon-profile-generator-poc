@@ -12,29 +12,29 @@ logging.basicConfig(level=logging.INFO)
 def main():
     st.set_page_config("Cartoon Profile Generator ( ^▽^)σ")
 
-    st.title("Cartoon Profile Generator ( ^▽^)σ")
-
     user_prompt = st.text_input("Input prompt", placeholder="Enter your specific appearance.", key="input")
     
-    st.sidebar.title("Profile Image")
-
+    st.sidebar.title("Cartoon Profile Generator\n( ^▽^)σ")
     uploaded_file = st.sidebar.file_uploader(
-        "Choose an image...", 
+        "Choose a your reference profile...", 
         type=["jpg", "png", "jpeg"]
     )
 
-    # image = st.image("/Users/Nitirat/Documents/PRANEAT/Pradit/Stable Diffusion/Datasets/nitirat-rectangle.png", caption="Uploaded image", use_column_width=True)
+    col1, col2 = st.columns(2)
+    
     if uploaded_file is not None:
         try:
             image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded image", use_column_width=True)
+            with col1:
+                st.image(image, caption="Uploaded image", use_column_width=True)
             logging.info(f"Image uploaded successfully. Size: {image.size}, Format: {image.format}")
         except Exception as e:
             st.error(f"Error opening the image: {str(e)}")
             logging.error(f"Error opening the image: {str(e)}")
+    else:
+        image = None
 
-    caption = None
-    if st.button("Generate Profile"):
+    if st.button("Generate profile"):
         if image is None:
             st.warning("Please upload an image before generating.")
             return
@@ -48,10 +48,16 @@ def main():
                 
                 # result = generate_image(caption)
                 result = generate_img2img(caption, image)
-                image_bytes = base64.b64decode(result['images'][0])
-                final_image = Image.open(io.BytesIO(image_bytes))
-                st.image(final_image, caption="Result image", use_column_width=True)
-    
+                length = len(result['images'])
+                
+                with col2:
+                    cols = st.columns(length)
+                    for i, image in enumerate(result['images']):
+                        image_bytes = base64.b64decode(image)
+                        final_image = Image.open(io.BytesIO(image_bytes))
+                        with cols[i % length]:
+                            st.image(final_image, caption="Result image", use_column_width=True)
+        
             except Exception as e:
                 st.error(f"An error occurred during generation: {str(e)}")
                 logging.error(f"An error occurred during generation: {str(e)}", exc_info=True)
