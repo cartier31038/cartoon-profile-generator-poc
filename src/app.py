@@ -4,7 +4,7 @@ import logging
 import streamlit as st
 
 from PIL import Image
-from utils import load_prompt, prompt_with_llm, generate_image, generate_img2img
+from utils import load_prompt, prompt_with_llm, generate_txt2img, generate_img2img
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +46,7 @@ def main():
                 st.subheader("Caption:")
                 st.write(caption)
                 
-                # result = generate_image(caption)
+                # result = generate_txt2img(caption)
                 result = generate_img2img(caption, image)
                 length = len(result['images'])
                 

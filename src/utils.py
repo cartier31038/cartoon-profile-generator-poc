@@ -32,14 +32,14 @@ def prompt_with_llm(user_prompt, system_prompt, image):
             <lora:last:0.9>
             """
             
-def generate_image(prompt):
+def generate_txt2img(prompt):
     
     url = f"{os.getenv('SD_API_URL')}/sdapi/v1/txt2img"
     headers = {
         "Content-Type": "application/json",
     }
 
-    logging.info(f"generate_image.prompt: {prompt}", exc_info=True)
+    logging.info(f"generate_txt2img.prompt: {prompt}", exc_info=True)
     
     data = {
         "prompt": prompt,
@@ -62,9 +62,10 @@ def generate_image(prompt):
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    logging.info(f"generate_txt2img.response: {response}", exc_info=True)
     result = json.loads(response.text)
-    logging.info(f"generate_image.code: {str(response.status_code)}", exc_info=True)
-    # logging.info(f"generate_image.text: {str(response.text)}", exc_info=True)
+    logging.info(f"generate_txt2img.code: {str(response.status_code)}", exc_info=True)
+    # logging.info(f"generate_txt2img.text: {str(response.text)}", exc_info=True)
     
     return result
 
@@ -84,7 +85,7 @@ def generate_img2img(prompt, image):
     bytes_image = byte_stream.getvalue()
     encoded_image = base64.b64encode(bytes_image).decode('utf-8')
 
-    logging.info(f"generate_img2img.blob_image: {encoded_image}", exc_info=True)
+    # logging.info(f"generate_img2img.blob_image: {encoded_image}", exc_info=True)
     data = {
         "prompt": prompt,
         "negative_prompt": "lowres, blurry, worst quality, low quality, normal quality, many people, bad anatomy, bad hands, missing fingers, error, text, username, extra digit, fewer digits, signature, watermark, cropped, jpeg artifacts, detailed background, glitch rim",
